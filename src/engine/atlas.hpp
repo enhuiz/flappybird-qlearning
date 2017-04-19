@@ -58,7 +58,7 @@ class Atlas
                 x *= mWidth;
                 y *= mHeight;
 
-                mDesc[name] = SDL_Rect{x, y, w, h};
+                mDesc[name] = SDL_Rect{static_cast<int>(x), static_cast<int>(y), w, h};
             }
         }
         catch (...)

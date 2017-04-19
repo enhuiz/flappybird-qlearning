@@ -14,6 +14,8 @@ void Bird::start()
     mSprite.atlasName = "flappyBird";
     mSprite.name = "bird0_0";
     velocity = 0;
+    frameCount = 0;
+    animateState = 0;
 }
 
 void Bird::update()
@@ -28,6 +30,18 @@ void Bird::fixedUpdate()
 {
     velocity = std::min(velocity + 0.75f, 6.5f);
     mTransform.position.y += velocity;
+    mTransform.position.y = std::max(0.0f, mTransform.position.y);
+
+    if (frameCount > 10)
+    {
+        frameCount = 0;
+        ++animateState;
+        animateState %= 3;
+        mSprite.name = "bird0_";
+        mSprite.name.push_back('0' + animateState);
+    }
+    mGame->addScore();
+    ++frameCount;
 }
 
 void Bird::setGame(const std::shared_ptr<Game> &game)

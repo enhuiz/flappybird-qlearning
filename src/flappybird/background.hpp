@@ -7,10 +7,10 @@ namespace enhuiz
 {
 namespace flappybird
 {
-class BackGround : public engine::GameObject
+class Background : public engine::GameObject
 {
   public:
-    BackGround(int x)
+    Background(int x)
     {
         mTransform.position.x = x;
     }

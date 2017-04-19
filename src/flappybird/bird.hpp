@@ -21,7 +21,8 @@ public:
 
 private:
   float velocity;
-
+  int frameCount;
+  int animateState;
   std::shared_ptr<Game> mGame;
 };
 }

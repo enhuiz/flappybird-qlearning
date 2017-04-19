@@ -164,8 +164,8 @@ class EG
         auto srcrect = mAtlasByName.at(sprite.atlasName)->getRect(sprite.name);
 
         return SDL_Rect{
-            position.x,
-            position.y,
+            static_cast<int>(position.x),
+            static_cast<int>(position.y),
             srcrect.w,
             srcrect.h,
         };
@@ -178,8 +178,8 @@ class EG
         auto srcrect = mAtlasByName.at(sprite.atlasName)->getRect(sprite.name);
 
         SDL_Rect destrect{
-            position.x,
-            position.y,
+            static_cast<int>(position.x),
+            static_cast<int>(position.y),
             srcrect.w,
             srcrect.h,
         };
