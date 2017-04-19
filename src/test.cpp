@@ -1,9 +1,13 @@
-#include "engine.hpp"
+#include "engine/eg.hpp"
+#include "flappybird/game.hpp"
 
-using namespace flappyql;
+using namespace enhuiz::engine;
+using namespace enhuiz::flappybird;
+
+using namespace std;
 
 int main()
 {
-    Engine engine("fuck", 300, 300);
-    engine.run();
+    Game game;
+    game.run();
 }

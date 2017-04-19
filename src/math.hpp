@@ -1,4 +1,9 @@
-namespace flappyql
+#ifndef MATH_HPP
+#define MATH_HPP
+
+namespace enhuiz
+{
+namespace math
 {
 struct Vector3
 {
@@ -66,4 +71,7 @@ struct Vector3
         return ret;
     }
 };
-};
+}
+}
+
+#endif
