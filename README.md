@@ -6,6 +6,7 @@ This is a flappy bird game played by Q-learning.
 $ mkdir build
 $ cd build
 $ cmake ..
+$ make
 $ ./app
 ```
 
