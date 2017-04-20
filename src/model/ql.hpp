@@ -22,9 +22,9 @@ class QL
         }
         else
         {
-            std::cerr << prevS << " " << currS << std::endl;
             Q[prevS] = std::vector<float>(nAction);
             Q[prevS][action] = (1 - alpha) * Q[prevS][action] + alpha * (R + gamma * getMax(currS));
+            std::cerr << "New State " << prevS << " " << currS << " " << Q[prevS][action] << std::endl;
         }
     }
 

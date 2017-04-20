@@ -26,7 +26,7 @@ public:
 private:
   void jump();
   void reward(float r);
-  std::string getState();
+  std::string getState(int resolution = 10);
 
 private:
   float mVelocity;

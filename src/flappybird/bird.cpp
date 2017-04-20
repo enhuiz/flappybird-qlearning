@@ -6,7 +6,7 @@ namespace enhuiz
 namespace flappybird
 {
 
-Bird::Bird() : mQL(new model::QL(2, 0.5, 0.5))
+Bird::Bird() : mQL(new model::QL(2, 0.8, 0.8))
 {
     mQLearning = true;
 }
@@ -75,7 +75,7 @@ void Bird::fixedUpdate()
         static std::mt19937 mt(rd());
         std::uniform_real_distribution<float> dist(0, 1);
 
-        mAction = dist(mt) < 0.95 ? mQL->getArgMax(getState()) : static_cast<int>(dist(mt) * 2);
+        mAction = dist(mt) < 1 ? mQL->getArgMax(getState()) : static_cast<int>(dist(mt) * 2);
         if (mAction == 1)
         {
             jump();
@@ -83,12 +83,12 @@ void Bird::fixedUpdate()
     }
 }
 
-std::string Bird::getState()
+std::string Bird::getState(int resolution)
 {
     auto pos = mGame->getNearestPipePosition(mTransform.position);
 
     std::stringstream ss;
-    ss << static_cast<int>(pos.x - mTransform.position.x) << "," << static_cast<int>(pos.y - mTransform.position.y);
+    ss << static_cast<int>(pos.x - mTransform.position.x) / resolution * resolution << "," << static_cast<int>(pos.y - mTransform.position.y) / resolution * resolution;
 
     return ss.str();
 }
@@ -96,7 +96,7 @@ std::string Bird::getState()
 void Bird::reward(float r)
 {
     auto currState = getState();
-    mQL->reward(mPrevState, currState, mAction, 1);
+    mQL->reward(mPrevState, currState, mAction, r);
     mPrevState = currState;
 }
 

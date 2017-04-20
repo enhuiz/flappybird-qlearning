@@ -10,6 +10,9 @@ Game::Game() : mScore(0), sharedThis(std::shared_ptr<Game>(this))
 
     mEG->addAtlas("flappyBird", "../res/flappyAtlas/atlas.png", "../res/flappyAtlas/atlas.txt");
 
+    mBird = std::make_shared<Bird>();
+    mBird->setGame(sharedThis);
+
     play();
 }
 
@@ -65,8 +68,6 @@ void Game::play(float delay)
         {
             mEG->addGameObject(digit);
         }
-        mBird = std::make_shared<Bird>();
-        mBird->setGame(sharedThis);
 
         mEG->addGameObject(mBird);
         updateScoreDisplay();
