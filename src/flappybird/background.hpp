@@ -19,21 +19,25 @@ class Background : public engine::GameObject
     {
         mSprite.atlasName = "flappyBird";
         mSprite.name = "bg_day";
-        velocity = 1;
+        mVelocity = 0.7;
     }
 
     void fixedUpdate()
     {
-        mTransform.position.x -= velocity;
+        mTransform.position.x -= mVelocity;
         if (mTransform.position.x < -288)
         {
             mTransform.position.x += 288 * 2;
         }
     }
 
+    void stop()
+    {
+        mVelocity = 0;
+    }
+
   private:
-    float velocity;
-    float pos;
+    float mVelocity;
 };
 }
 }

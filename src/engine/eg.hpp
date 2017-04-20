@@ -9,14 +9,12 @@
 #include "screen.hpp"
 #include "gameobject.hpp"
 #include "atlas.hpp"
-
-#include "../math.hpp"
+#include "timer.hpp"
 
 namespace enhuiz
 {
 namespace engine
 {
-using time = std::chrono::high_resolution_clock;
 
 class EG
 {
@@ -25,8 +23,6 @@ class EG
   public:
     EG(std::string title, int width, int height, float fixedUpdateDuration = 0.01666666f) : mScreen(std::unique_ptr<Screen>(new Screen(title, width, height))),
                                                                                             mEvent(std::make_shared<SDL_Event>()),
-                                                                                            mStartTime(time::now()),
-                                                                                            mLastFixedUpdateTime(time::now()),
                                                                                             mFixedUpdateDuration(fixedUpdateDuration),
                                                                                             sharedThis(std::shared_ptr<EG>(this)) {}
     void update()
@@ -42,39 +38,31 @@ class EG
 
     void fixedUpdate()
     {
-        if (std::chrono::duration_cast<std::chrono::duration<float>>(time::now() - mLastFixedUpdateTime).count() > mFixedUpdateDuration)
+        for (auto gameObject : mGameObjects)
         {
-            mLastFixedUpdateTime = time::now();
-            for (auto gameObject : mGameObjects)
+            if (gameObject->mActive)
             {
-                if (gameObject->mActive)
-                {
-                    gameObject->fixedUpdate();
-                }
+                gameObject->fixedUpdate();
             }
+        }
 
-            // collision
-            for (auto goit1 = mGameObjects.begin(); goit1 != mGameObjects.end(); ++goit1)
+        // collision
+        for (auto goit1 = mGameObjects.begin(); goit1 != mGameObjects.end(); ++goit1)
+        {
+            for (auto goit2 = goit1; goit2 != mGameObjects.end(); ++goit2)
             {
-                for (auto goit2 = goit1; goit2 != mGameObjects.end(); ++goit2)
+                if (goit1 != goit2)
                 {
-                    if (goit1 != goit2)
+                    auto go1 = *goit1;
+                    auto go2 = *goit2;
+                    if (go1->mIsCollider && go2->mIsCollider)
                     {
-                        auto go1 = *goit1;
-                        auto go2 = *goit2;
-
-                        if (go1->isCollider && go2->isCollider)
+                        if (isOverlapped(go1, go2))
                         {
-                            SDL_Rect rect1 = getDestRect(go1);
-                            SDL_Rect rect2 = getDestRect(go2);
-
-                            if (isOverlapped(rect1, rect2))
-                            {
-                                callAtNextEndOfFrame([=]() {
-                                    go1->onCollide(go2);
-                                    go2->onCollide(go1);
-                                });
-                            }
+                            callAtEndOfNextFrame([=]() {
+                                go1->onCollide(go2);
+                                go2->onCollide(go1);
+                            });
                         }
                     }
                 }
@@ -109,16 +97,41 @@ class EG
         mRunning = true;
         while (mRunning)
         {
+            timer.tick();
+
             pollEvent();
+
             update();
-            fixedUpdate();
+
+            mFixedUpdateDurationPool += timer.getDeltaTime();
+            if (mFixedUpdateDurationPool > mFixedUpdateDuration)
+            {
+                fixedUpdate();
+                mFixedUpdateDurationPool = 0;
+            }
+
             render();
 
-            while (!mEndOfFrameDelegates.empty())
+            // end of frame
+            endOfFrameDelegates();
+        }
+    }
+
+    void endOfFrameDelegates()
+    {
+        int size = mEndOfFrameDelegates.size();
+        for (int i = 0; i < size; ++i)
+        {
+            auto pair = mEndOfFrameDelegates.front();
+            mEndOfFrameDelegates.pop_front();
+            if (pair.first < 0)
             {
-                auto delegate = mEndOfFrameDelegates.front();
-                mEndOfFrameDelegates.pop_front();
-                delegate();
+                pair.second();
+            }
+            else
+            {
+                pair.first -= timer.getDeltaTime();
+                mEndOfFrameDelegates.push_back(pair);
             }
         }
     }
@@ -151,26 +164,17 @@ class EG
         return mEvent;
     }
 
-    void callAtNextEndOfFrame(std::function<void()> delegate)
+    void callAtEndOfNextFrame(std::function<void()> delegate)
     {
-        mEndOfFrameDelegates.push_back(delegate);
+        callAfter(0, delegate);
+    }
+
+    void callAfter(float duration, std::function<void()> delegate)
+    {
+        mEndOfFrameDelegates.push_back(std::pair<float, std::function<void()>>(duration, delegate));
     }
 
   private:
-    SDL_Rect getDestRect(const std::shared_ptr<GameObject> &gameObject) const
-    {
-        auto position = gameObject->mTransform.position;
-        auto sprite = gameObject->mSprite;
-        auto srcrect = mAtlasByName.at(sprite.atlasName)->getRect(sprite.name);
-
-        return SDL_Rect{
-            static_cast<int>(position.x),
-            static_cast<int>(position.y),
-            srcrect.w,
-            srcrect.h,
-        };
-    }
-
     void render(const std::shared_ptr<GameObject> &gameObject) const
     {
         auto position = gameObject->mTransform.position;
@@ -190,8 +194,10 @@ class EG
                        &destrect);
     }
 
-    bool isOverlapped(const SDL_Rect &rect1, const SDL_Rect &rect2) const
+    bool isOverlapped(const std::shared_ptr<GameObject> &go1, const std::shared_ptr<GameObject> &go2) const
     {
+        SDL_Rect rect1 = go1->toRect();
+        SDL_Rect rect2 = go2->toRect();
 
         bool noHorizontal = rect1.x + rect1.w <= rect2.x || rect1.x >= rect2.x + rect2.w;
         bool noVertical = rect1.y + rect1.h <= rect2.y || rect1.y >= rect2.y + rect2.h;
@@ -202,8 +208,8 @@ class EG
   private:
     bool mRunning = false;
     float mFixedUpdateDuration;
-    time::time_point mStartTime;
-    time::time_point mLastFixedUpdateTime;
+    float mFixedUpdateDurationPool;
+    Timer timer;
 
     std::map<std::string, std::unique_ptr<Atlas>> mAtlasByName;
 
@@ -213,7 +219,7 @@ class EG
     std::shared_ptr<SDL_Event> mEvent;
 
     std::list<std::shared_ptr<GameObject>> mGameObjects;
-    std::list<std::function<void()>> mEndOfFrameDelegates;
+    std::list<std::pair<float, std::function<void()>>> mEndOfFrameDelegates;
 
     std::shared_ptr<EG> sharedThis;
 };

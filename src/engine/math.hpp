@@ -3,7 +3,7 @@
 
 namespace enhuiz
 {
-namespace math
+namespace engine
 {
 struct Vector3
 {

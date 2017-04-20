@@ -20,10 +20,12 @@ public:
   void setGame(const std::shared_ptr<Game> &game);
 
 private:
-  float velocity;
-  int frameCount;
-  int animateState;
+  float mVelocity;
+  int mFrameCount;
+  int mAnimateState;
   std::shared_ptr<Game> mGame;
+  bool mAlive;
+  bool mOnTheGround;
 };
 }
 }

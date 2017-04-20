@@ -4,40 +4,57 @@ namespace enhuiz
 {
 namespace flappybird
 {
-Game::Game() : mScore(0)
+Game::Game() : mScore(0), sharedThis(std::shared_ptr<Game>(this))
 {
     mEG = std::unique_ptr<engine::EG>(new engine::EG("flappyBird", 288, 512));
 
     mEG->addAtlas("flappyBird", "../res/flappyAtlas/atlas.png", "../res/flappyAtlas/atlas.txt");
 
-    for (int i = 0; i < 2; ++i)
-    {
-        mBackgrounds.push_back(std::make_shared<Background>(288 * i));
-    }
-
-    for (int i = 0; i < 2; ++i)
-    {
-        mLands.push_back(std::make_shared<Land>(336 * i));
-    }
-
-    for (int i = 0; i < 5; ++i)
-    {
-        mScoreDigits.push_back(std::make_shared<Digit>());
-    }
-
-    mBird = std::make_shared<Bird>();
-    mBird->setGame(std::shared_ptr<Game>(this));
-
     play();
 }
 
-void Game::play()
+void Game::play(float delay)
 {
-    mEG->callAtNextEndOfFrame([&]() {
+    if (mAboutToPlay) return;
+    mAboutToPlay = true;
+    mEG->callAfter(delay, [&]() {
+        mScore = 0;
+
+        mBackgrounds.clear();
+        for (int i = 0; i < 2; ++i)
+        {
+            mBackgrounds.push_back(std::make_shared<Background>(288 * i));
+        }
+
+        mLands.clear();
+        for (int i = 0; i < 2; ++i)
+        {
+            mLands.push_back(std::make_shared<Land>(336 * i));
+        }
+
+        mScoreDigits.clear();
+        for (int i = 0; i < 5; ++i)
+        {
+            mScoreDigits.push_back(std::make_shared<Digit>());
+        }
+
+        mPipes.clear();
+        for (int i = 0; i < 3; ++i)
+        {
+            auto up = std::make_shared<Pipe>(300 + 150 * i);
+            auto down = std::make_shared<Pipe>(300 + 150 * i, up);
+            mPipes.push_back(up);
+            mPipes.push_back(down);
+        }
+
         mEG->clear();
         for (auto bg : mBackgrounds)
         {
             mEG->addGameObject(bg);
+        }
+        for (auto pipe : mPipes)
+        {
+            mEG->addGameObject(pipe);
         }
         for (auto land : mLands)
         {
@@ -47,14 +64,31 @@ void Game::play()
         {
             mEG->addGameObject(digit);
         }
-        updateScoreDisplay();
+        mBird = std::make_shared<Bird>();
+        mBird->setGame(sharedThis);
+
         mEG->addGameObject(mBird);
+        updateScoreDisplay();
+
+        mAboutToPlay = false;
     });
 }
 
 void Game::gameover()
 {
-    play();
+    for (auto bg : mBackgrounds)
+    {
+        bg->stop();
+    }
+    for (auto pipe : mPipes)
+    {
+        pipe->stop();
+    }
+    for (auto land : mLands)
+    {
+        land->stop();
+    }
+    play(1);
 }
 
 void Game::run()
@@ -96,9 +130,12 @@ void Game::updateScoreDisplay()
     }
 }
 
-void Game::addScore()
+void Game::updateScore(int posX)
 {
-    ++mScore;
+    for (auto pipe : mPipes)
+    {
+        mScore += pipe->getScore(posX);
+    }
     updateScoreDisplay();
 }
 }

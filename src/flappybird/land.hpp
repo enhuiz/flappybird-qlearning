@@ -12,7 +12,10 @@ class Land : public engine::GameObject
   public:
     Land(int x)
     {
-        isCollider = true;
+        mTag = "land";
+        mIsCollider = true;
+        mBounds = SDL_Rect{0, 0, 336, 112};
+
         mTransform.position.x = x;
         mTransform.position.y = 400;
     }
@@ -21,21 +24,25 @@ class Land : public engine::GameObject
     {
         mSprite.atlasName = "flappyBird";
         mSprite.name = "land";
-        velocity = 1;
+        mVelocity = 1.5;
     }
 
     void fixedUpdate()
     {
-        mTransform.position.x -= velocity;
+        mTransform.position.x -= mVelocity;
         if (mTransform.position.x < -336)
         {
             mTransform.position.x += 336 * 2;
         }
     }
 
+    void stop()
+    {
+        mVelocity = 0;
+    }
+
   private:
-    float velocity;
-    float pos;
+    float mVelocity;
 };
 }
 }

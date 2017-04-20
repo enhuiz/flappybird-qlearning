@@ -8,40 +8,53 @@ namespace flappybird
 
 void Bird::start()
 {
-    isCollider = true;
-    mTransform.position.x = 30;
+    mIsCollider = true;
+    mBounds = SDL_Rect{11, 17, 25, 15};
+
+    mTransform.position.x = 35;
     mTransform.position.y = 20;
     mSprite.atlasName = "flappyBird";
     mSprite.name = "bird0_0";
-    velocity = 0;
-    frameCount = 0;
-    animateState = 0;
+    mVelocity = 0;
+    mFrameCount = 0;
+    mAnimateState = 0;
+    mAlive = true;
+    mOnTheGround = false;
 }
 
 void Bird::update()
 {
-    if (mEG->getEvent()->type == SDL_KEYDOWN && mEG->getEvent()->key.keysym.sym == SDLK_SPACE)
+    if (mEG->getEvent()->type == SDL_KEYDOWN && mEG->getEvent()->key.keysym.sym == SDLK_SPACE && mAlive)
     {
-        velocity = -11;
+        mVelocity = -8;
     }
 }
 
 void Bird::fixedUpdate()
 {
-    velocity = std::min(velocity + 0.75f, 6.5f);
-    mTransform.position.y += velocity;
-    mTransform.position.y = std::max(0.0f, mTransform.position.y);
-
-    if (frameCount > 10)
+    if (!mOnTheGround)
     {
-        frameCount = 0;
-        ++animateState;
-        animateState %= 3;
-        mSprite.name = "bird0_";
-        mSprite.name.push_back('0' + animateState);
+        mVelocity = std::min(mVelocity + 0.6f, 10.0f);
     }
-    mGame->addScore();
-    ++frameCount;
+
+    mTransform.position.y += mVelocity;
+
+    if (toRect().y < 0)
+    {
+        mTransform.position.y -= mVelocity;
+    }
+
+    if (mFrameCount > 10)
+    {
+        mFrameCount = 0;
+        ++mAnimateState;
+        mAnimateState %= 3;
+        mSprite.name = "bird0_";
+        mSprite.name.push_back('0' + mAnimateState);
+    }
+    ++mFrameCount;
+
+    mGame->updateScore(toRect().x);
 }
 
 void Bird::setGame(const std::shared_ptr<Game> &game)
@@ -51,8 +64,16 @@ void Bird::setGame(const std::shared_ptr<Game> &game)
 
 void Bird::onCollide(std::shared_ptr<GameObject> other)
 {
-    std::cerr << " bump" << std::endl;
-    velocity = 0;
+    if (other->getTag() == "land")
+    {
+        mOnTheGround = true;
+        mVelocity = 0;
+    }
+    else
+    {
+        mVelocity = std::max(mVelocity, 0.0f);
+    }
+    mAlive = false;
     mGame->gameover();
 }
 }
