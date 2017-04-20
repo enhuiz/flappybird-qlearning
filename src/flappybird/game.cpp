@@ -6,7 +6,7 @@ namespace flappybird
 {
 Game::Game() : mScore(0), sharedThis(std::shared_ptr<Game>(this))
 {
-    mEG = std::unique_ptr<engine::EG>(new engine::EG("flappyBird", 288, 512));
+    mEG = std::unique_ptr<engine::EG>(new engine::EG("flappyBird", 288, 512, 0));
 
     mEG->addAtlas("flappyBird", "../res/flappyAtlas/atlas.png", "../res/flappyAtlas/atlas.txt");
 
@@ -15,7 +15,8 @@ Game::Game() : mScore(0), sharedThis(std::shared_ptr<Game>(this))
 
 void Game::play(float delay)
 {
-    if (mAboutToPlay) return;
+    if (mAboutToPlay)
+        return;
     mAboutToPlay = true;
     mEG->callAfter(delay, [&]() {
         mScore = 0;
@@ -88,7 +89,7 @@ void Game::gameover()
     {
         land->stop();
     }
-    play(1);
+    play(0);
 }
 
 void Game::run()
@@ -132,11 +133,30 @@ void Game::updateScoreDisplay()
 
 void Game::updateScore(int posX)
 {
-    for (auto pipe : mPipes)
+    for (const auto &pipe : mPipes)
     {
         mScore += pipe->getScore(posX);
     }
     updateScoreDisplay();
+}
+
+engine::Vector3 Game::getNearestPipePosition(engine::Vector3 pos) const
+{
+    engine::Vector3 ret{1 << 20, 0, 0};
+
+    for (const auto &pipe : mPipes)
+    {
+        if (pipe->isDown())
+            continue;
+
+        auto rect = pipe->toRect();
+
+        if (pos.x < rect.x + rect.w && ret.x > rect.x + rect.w)
+        {
+            ret = engine::Vector3{rect.x + rect.w, rect.y, 0};
+        }
+    }
+    return ret;
 }
 }
 }

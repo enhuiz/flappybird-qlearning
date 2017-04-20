@@ -11,6 +11,8 @@ struct Vector3
     float y = 0;
     float z = 0;
 
+    Vector3(float x = 0, float y = 0, float z = 0) : x(x), y(y), z(z) {}
+
     Vector3 &operator+=(const Vector3 &other)
     {
         x += other.x;

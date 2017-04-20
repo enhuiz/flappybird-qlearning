@@ -6,6 +6,11 @@ namespace enhuiz
 namespace flappybird
 {
 
+Bird::Bird() : mQL(new model::QL(2, 0.5, 0.5))
+{
+    mQLearning = true;
+}
+
 void Bird::start()
 {
     mIsCollider = true;
@@ -24,10 +29,15 @@ void Bird::start()
 
 void Bird::update()
 {
-    if (mEG->getEvent()->type == SDL_KEYDOWN && mEG->getEvent()->key.keysym.sym == SDLK_SPACE && mAlive)
+    if (mEG->getEvent()->type == SDL_KEYDOWN && mEG->getEvent()->key.keysym.sym == SDLK_SPACE && mAlive && !mQLearning)
     {
-        mVelocity = -8;
+        jump();
     }
+}
+
+void Bird::jump()
+{
+    mVelocity = -8;
 }
 
 void Bird::fixedUpdate()
@@ -55,6 +65,39 @@ void Bird::fixedUpdate()
     ++mFrameCount;
 
     mGame->updateScore(toRect().x);
+
+    // Q-learning Stuff
+    if (mQLearning && mAlive)
+    {
+        reward(1);
+
+        static std::random_device rd;
+        static std::mt19937 mt(rd());
+        std::uniform_real_distribution<float> dist(0, 1);
+
+        mAction = dist(mt) < 0.95 ? mQL->getArgMax(getState()) : static_cast<int>(dist(mt) * 2);
+        if (mAction == 1)
+        {
+            jump();
+        }
+    }
+}
+
+std::string Bird::getState()
+{
+    auto pos = mGame->getNearestPipePosition(mTransform.position);
+
+    std::stringstream ss;
+    ss << static_cast<int>(pos.x - mTransform.position.x) << "," << static_cast<int>(pos.y - mTransform.position.y);
+
+    return ss.str();
+}
+
+void Bird::reward(float r)
+{
+    auto currState = getState();
+    mQL->reward(mPrevState, currState, mAction, 1);
+    mPrevState = currState;
 }
 
 void Bird::setGame(const std::shared_ptr<Game> &game)
@@ -64,6 +107,10 @@ void Bird::setGame(const std::shared_ptr<Game> &game)
 
 void Bird::onCollide(std::shared_ptr<GameObject> other)
 {
+    if (mAlive && mQLearning)
+    {
+        reward(-100);
+    }
     if (other->getTag() == "land")
     {
         mOnTheGround = true;

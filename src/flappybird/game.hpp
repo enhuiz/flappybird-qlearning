@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../engine/eg.hpp"
+
 #include "bird.hpp"
 #include "background.hpp"
 #include "land.hpp"
@@ -26,6 +27,7 @@ public:
   void run();
   void updateScore(int posX);
   void updateScoreDisplay();
+  engine::Vector3 getNearestPipePosition(engine::Vector3 pos) const;
 
 private:
   std::shared_ptr<Bird> mBird;

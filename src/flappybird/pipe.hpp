@@ -51,6 +51,11 @@ class Pipe : public engine::GameObject
         return ret;
     }
 
+    bool isDown()
+    {
+        return mPassivePipe != nullptr;
+    }
+
   private:
     void shuffleY()
     {
