@@ -21,9 +21,6 @@ ${SDL2IMAGE_LIBRARIES}
 bird
 )
 
-# add_executable(bird ${CMAKE_SOURCE_DIR}/src/flappybird/bird.cpp)
-# add_executable(game ${CMAKE_SOURCE_DIR}/src/flappybird/game.cpp)
-
 add_executable(app ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 target_link_libraries(app
